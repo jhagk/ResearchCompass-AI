@@ -2,7 +2,7 @@ import os
 import streamlit as st
 from dotenv import load_dotenv
 from langchain.globals import set_llm_cache
-from langchain.cache import InMemoryCache
+from langchain_community.cache import InMemoryCache
 
 # enable LLM caching
 set_llm_cache(InMemoryCache())
