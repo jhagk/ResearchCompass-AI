@@ -5,7 +5,12 @@ from graph.orchestrator import build_graph
 from graph.synthesizer import synthesize_report
 from report_generator import generate_pdf_report
 
+import os
 
+# Create required directories
+os.makedirs("data/cache", exist_ok=True)
+os.makedirs("data/reports", exist_ok=True)
+os.makedirs("data/faiss_index", exist_ok=True)
 def normalize_title(title: str) -> str:
     title = title.lower()
     title = re.sub(r"[^\w\s]", "", title)
