@@ -367,14 +367,6 @@ def run_topic_suggester(
 ) -> dict:
     """
     Suggests 5 GENUINELY NOVEL research topics.
-
-    Pipeline:
-    1. Discover emerging techniques dynamically
-    2. Discover India-specific gaps dynamically
-    3. Generate 20 candidate topics
-    4. Validate each with real paper counts
-    5. Score validated topics with LLM
-    6. Return best 5 with evidence
     """
 
     print(f"Topic Suggester running for domain: {domain}, "
@@ -390,7 +382,7 @@ def run_topic_suggester(
     papers = fetch_arxiv_papers.invoke(domain)
 
     # Step 2 - get RAG context
-    # fetch papers with diverse queries
+    qa_chain = get_qa_chain(domain)  # ← FIXED
     rag_result = qa_chain.invoke({
         "query": f"""
         What are SPECIFIC unsolved problems in {domain}?
