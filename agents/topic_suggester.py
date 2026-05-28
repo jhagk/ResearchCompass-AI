@@ -101,37 +101,50 @@ def generate_20_candidates(
     context: str,
     llm
 ) -> list:
-    """
-    Generates 20 candidate topics using
-    Emerging Technique + Problem + India formula.
-    """
 
     print("Generating 20 candidate topics...")
 
     prompt = f"""
     You are a research advisor for {domain}.
 
-    Emerging techniques found from recent papers:
+    Emerging techniques:
     {emerging_techniques}
 
-    India-specific gaps:
+    India gaps:
     {india_gaps}
 
-    Research context:
-    {context[:1500]}
+    Generate EXACTLY 20 SPECIFIC candidate topics.
 
-    Generate EXACTLY 20 candidate research topics.
+    MANDATORY formula for each topic:
+    [Specific Emerging Method] + [Specific Problem]
+    + [Specific India Context]
 
-    FORMULA for each topic:
-    [Emerging Technique] + [Specific Problem]
-    + [India Context if applicable]
+    GOOD examples:
+    ✓ "Vision Mamba for Diabetic Retinopathy Detection
+       in Low-Resource Rural Indian Clinics"
+    ✓ "Federated LoRA Fine-tuning of BioGPT for
+       Hindi-English Code-Mixed Clinical Notes"
+    ✓ "KAN-based Drug Interaction Prediction for
+       Indian Pharmaceutical Dataset"
+    ✓ "Tiny ML Deployment of Skin Disease Detection
+       on Low-Cost Android Devices in Rural India"
+    ✓ "Multimodal LLM for Ayurvedic Medicine
+       Prescription Analysis in Regional Languages"
 
-    Rules:
-    - Each topic must use one emerging technique above
-    - Each topic must address one specific problem
-    - At least 10 topics must have India context
-    - No generic topics like "CNN for X" or "LSTM for Y"
-    - Topics should be specific enough to search on ArXiv
+    BAD examples — DO NOT generate these:
+    ✗ "Synthetic data for medical education" ← generic
+    ✗ "Rare disease dataset augmentation" ← too broad
+    ✗ "Deep learning for disease detection" ← saturated
+    ✗ "CNN for medical imaging" ← 500+ papers exist
+    ✗ "Transformer for clinical NLP" ← too generic
+
+    RULES:
+    - Each topic must name a SPECIFIC method
+    - Each topic must have INDIA context
+    - Topics must be narrow enough to search on ArXiv
+      and find LESS THAN 10 results
+    - NO two topics from same paper
+    - NO generic "deep learning for X" topics
 
     Return ONLY topic titles — one per line.
     No numbering. No explanation.
@@ -200,17 +213,25 @@ def validate_all_candidates(
     """
     Validates all 20 candidates using real paper counts.
     Keeps only ACCEPT and CONSIDER topics.
+    Shows detailed validation output for debugging.
     """
 
     print("Validating novelty with real paper counts...")
+    print(f"Total candidates to validate: {len(candidates)}")
     validated = []
 
-    for topic in candidates:
+    for i, topic in enumerate(candidates):
+        print(f"\nChecking {i+1}/{len(candidates)}: "
+              f"{topic[:50]}...")
+
         result = validate_topic_novelty(topic)
+
         print(
             f"  [{result['verdict']}] "
-            f"{topic[:50]} "
-            f"({result['paper_count']} papers)"
+            f"Papers: {result['paper_count']} | "
+            f"Citations: {result['avg_citations']} | "
+            f"Novelty: {result['novelty']} | "
+            f"{topic[:50]}"
         )
 
         if result["verdict"] in ["ACCEPT", "CONSIDER"]:
@@ -220,11 +241,31 @@ def validate_all_candidates(
                 "avg_citations": result["avg_citations"],
                 "novelty": result["novelty"]
             })
+        else:
+            print(f"  REJECTED: {topic[:50]}")
 
-    print(
-        f"Validated: {len(validated)}/{len(candidates)} "
-        f"topics accepted."
-    )
+    print(f"\nValidation Summary:")
+    print(f"  Total candidates : {len(candidates)}")
+    print(f"  Accepted         : {len(validated)}")
+    print(f"  Rejected         : "
+          f"{len(candidates) - len(validated)}")
+
+    # if all rejected — return all candidates
+    # to avoid empty result
+    if len(validated) == 0:
+        print("WARNING: All topics rejected!")
+        print("Possible reason: Semantic Scholar rate limited")
+        print("Returning all candidates without filtering...")
+        return [
+            {
+                "topic": t,
+                "paper_count": 0,
+                "avg_citations": 0,
+                "novelty": "Unverified"
+            }
+            for t in candidates
+        ]
+
     return validated
 
 
@@ -349,12 +390,13 @@ def run_topic_suggester(
     papers = fetch_arxiv_papers.invoke(domain)
 
     # Step 2 - get RAG context
-    qa_chain = get_qa_chain(domain)
+    # fetch papers with diverse queries
     rag_result = qa_chain.invoke({
         "query": f"""
-        What are the main research gaps and unsolved
-        problems in {domain}?
-        What existing methods fail?
+        What are SPECIFIC unsolved problems in {domain}?
+        What methods FAIL and WHY?
+        What India-specific challenges exist in {domain}?
+        What NEW techniques from 2024-2025 could apply here?
         """
     })
     context = rag_result["result"]
