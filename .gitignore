@@ -1,18 +1,43 @@
+# API keys - never push to GitHub
 .env
+.streamlit/secrets.toml
 
+# Virtual environment
 .venv/
 venv/
+env/
 
+# Cache and data - too large for GitHub
 data/cache/
 data/faiss_index_*/
 data/reports/
 
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+*.pyw
 
+# IDE files
 .vscode/
 .idea/
+*.suo
+*.user
 
+# OS files
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Distribution
+dist/
+build/
+*.egg-info/
